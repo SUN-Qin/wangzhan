@@ -5,6 +5,8 @@ import PostPage from "../components/PostPage.astro";
 import { PAGE_SIZE } from "../constants/constants";
 import MainGridLayout from "../layouts/MainGridLayout.astro";
 import { getSortedPosts } from "../utils/content-utils";
+import { siteConfig } from "../config";
+import { getCollection } from "astro:content";
 
 export const getStaticPaths = (async ({ paginate }) => {
 	const allBlogPosts = await getSortedPosts();
@@ -15,9 +17,35 @@ export const getStaticPaths = (async ({ paginate }) => {
 const { page } = Astro.props;
 
 const len = page.data.length;
+const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    name: siteConfig.title,
+    description: siteConfig.subtitle,
+    url: Astro.site,
+};
+const featuredTools = (await getCollection("tools"))
+    .filter((tool) => tool.data.featured)
+    .slice(0, 3);
 ---
 
 <MainGridLayout>
+    <script is:inline slot="head" type="application/ld+json" set:html={JSON.stringify(jsonLd)}></script>
+    {page.currentPage === 1 && featuredTools.length > 0 && <section class="card-base p-6 md:p-8 mb-4">
+        <div class="flex items-center justify-between gap-4 mb-4">
+            <div>
+                <p class="text-sm text-[var(--primary)] font-bold mb-1">精选工具</p>
+                <h1 class="text-2xl font-bold">值得先试的 AI 工具</h1>
+            </div>
+            <a class="font-bold text-[var(--primary)]" href="/tools/">查看工具库 →</a>
+        </div>
+        <div class="grid gap-3 md:grid-cols-3">
+            {featuredTools.map((tool) => <a class="btn-card rounded-lg p-4" href={`/tools/${tool.slug}/`}>
+                <h2 class="font-bold">{tool.data.name}</h2>
+                <p class="text-sm text-75 mt-1 line-clamp-2">{tool.data.description}</p>
+            </a>)}
+        </div>
+    </section>}
     <PostPage page={page}></PostPage>
     <Pagination class="mx-auto onload-animation" page={page} style={`animation-delay: calc(var(--content-delay) + ${(len)*50}ms)`}></Pagination>
 </MainGridLayout>

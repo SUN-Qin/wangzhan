@@ -1,0 +1,58 @@
+---
+import MainGridLayout from "../../layouts/MainGridLayout.astro";
+import { getCollection } from "astro:content";
+import { siteConfig } from "../../config";
+
+const tools = (await getCollection("tools")).sort((a, b) => Number(b.data.featured) - Number(a.data.featured));
+const categories = [...new Set(tools.map((tool) => tool.data.category))];
+const platforms = [...new Set(tools.flatMap((tool) => tool.data.platforms))];
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@type": "CollectionPage",
+  name: "AI 工具库",
+  description: "经过整理和测试的 AI 工具、软件与生产力资源。",
+  url: new URL("/tools/", Astro.site).href,
+  isPartOf: { "@type": "WebSite", name: siteConfig.title, url: Astro.site },
+};
+---
+
+<MainGridLayout title="AI 工具库" description="经过整理和测试的 AI 工具、软件与生产力资源。">
+  <script is:inline slot="head" type="application/ld+json" set:html={JSON.stringify(jsonLd)}></script>
+  <div class="card-base p-6 md:p-8 mb-4">
+    <div class="flex flex-wrap items-end justify-between gap-4 mb-6">
+      <div>
+        <p class="text-sm text-[var(--primary)] font-bold mb-2">AI TOOLS DIRECTORY</p>
+        <h1 class="text-3xl font-bold mb-2">AI 工具库</h1>
+        <p class="text-75">按场景、平台和价格找到适合你的工具。</p>
+      </div>
+      <a class="btn-regular rounded-lg px-4 h-10 font-bold" href="/archive/">查看全部文章</a>
+    </div>
+    <div class="grid gap-3 md:grid-cols-3">
+      <label class="md:col-span-1"><span class="sr-only">搜索工具</span><input id="tool-search" class="w-full h-11 rounded-lg px-3 bg-black/5 dark:bg-white/10" placeholder="搜索工具名称或功能" /></label>
+      <select id="tool-category" class="h-11 rounded-lg px-3 bg-black/5 dark:bg-white/10"><option value="">全部分类</option>{categories.map((category) => <option value={category}>{category}</option>)}</select>
+      <select id="tool-platform" class="h-11 rounded-lg px-3 bg-black/5 dark:bg-white/10"><option value="">全部平台</option>{platforms.map((platform) => <option value={platform}>{platform}</option>)}</select>
+    </div>
+  </div>
+
+  <div id="tool-grid" class="grid gap-4 md:grid-cols-2">
+    {tools.map((tool) => <article class="tool-card card-base p-5" data-name={`${tool.data.name} ${tool.data.description} ${tool.data.tags.join(" ")}`.toLowerCase()} data-category={tool.data.category} data-platforms={tool.data.platforms.join(",")}>
+      <div class="flex gap-4">
+        {tool.data.logo ? <img src={tool.data.logo} alt={`${tool.data.name} logo`} width="52" height="52" loading="lazy" class="w-13 h-13 rounded-xl bg-white object-contain p-2" /> : <div class="w-13 h-13 rounded-xl bg-[var(--primary)]/10 flex items-center justify-center font-bold text-xl text-[var(--primary)]">{tool.data.name.slice(0, 1)}</div>}
+        <div class="min-w-0 flex-1"><div class="flex flex-wrap items-center gap-2"><h2 class="text-xl font-bold truncate">{tool.data.name}</h2>{tool.data.featured && <span class="text-xs px-2 py-1 rounded bg-[var(--primary)]/15 text-[var(--primary)]">推荐</span>}</div><p class="text-sm text-75 mt-1 line-clamp-2">{tool.data.description}</p></div>
+      </div>
+      <div class="flex flex-wrap gap-2 mt-4 text-xs text-75"><span class="px-2 py-1 rounded bg-black/5 dark:bg-white/10">{tool.data.category}</span><span class="px-2 py-1 rounded bg-black/5 dark:bg-white/10">{tool.data.free ? "免费可用" : "付费"}</span>{tool.data.platforms.slice(0, 3).map((platform) => <span class="px-2 py-1 rounded bg-black/5 dark:bg-white/10">{platform}</span>)}</div>
+      <a class="inline-flex mt-5 font-bold text-[var(--primary)]" href={`/tools/${tool.slug}/`}>查看工具详情 →</a>
+    </article>)}
+  </div>
+  <p id="tool-empty" class="hidden card-base p-8 text-center text-75">没有找到匹配的工具。</p>
+</MainGridLayout>
+
+<script>
+  const search = document.querySelector<HTMLInputElement>("#tool-search");
+  const category = document.querySelector<HTMLSelectElement>("#tool-category");
+  const platform = document.querySelector<HTMLSelectElement>("#tool-platform");
+  const cards = [...document.querySelectorAll<HTMLElement>(".tool-card")];
+  const empty = document.querySelector<HTMLElement>("#tool-empty");
+  const filter = () => { const query = search?.value.toLowerCase().trim() || ""; const visible = cards.filter((card) => { const matches = card.dataset.name?.includes(query) && (!category?.value || card.dataset.category === category.value) && (!platform?.value || card.dataset.platforms?.split(",").includes(platform.value)); card.hidden = !matches; return matches; }); if (empty) empty.classList.toggle("hidden", visible.length > 0); };
+  search?.addEventListener("input", filter); category?.addEventListener("change", filter); platform?.addEventListener("change", filter);
+</script>

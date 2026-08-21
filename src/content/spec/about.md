@@ -1,9 +1,9 @@
-# About
-This is the demo site for [Fuwari](https://github.com/saicaca/fuwari).
+---
+title: 关于 AI 工具研究所
+---
 
-::github{repo="saicaca/fuwari"}
+# 关于 AI 工具研究所
 
-> ### Sources of images used in this site
-> - [Unsplash](https://unsplash.com/)
-> - [星と少女](https://www.pixiv.net/artworks/108916539) by [Stella](https://www.pixiv.net/users/93273965)
-> - [Rabbit - v1.4 Showcase](https://civitai.com/posts/586908) by [Rabbit_YourMajesty](https://civitai.com/user/Rabbit_YourMajesty)
+AI 工具研究所是一个中文独立内容站，专注于 AI 工具和实用软件的测评、教程与资源整理。
+
+我们坚持记录真实体验，标注官方链接与测试时间，不托管未经验证的安装包。商业合作、纠错和工具推荐可以通过站点主页的社交链接联系。

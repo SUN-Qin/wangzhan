@@ -1,0 +1,32 @@
+---
+import { getCollection } from "astro:content";
+import MainGridLayout from "../../layouts/MainGridLayout.astro";
+import Markdown from "../../components/misc/Markdown.astro";
+import { formatDateToYYYYMMDD } from "../../utils/date-utils";
+
+export async function getStaticPaths() {
+  const tools = await getCollection("tools");
+  return tools.map((tool) => ({ params: { slug: tool.slug }, props: { tool } }));
+}
+const { tool } = Astro.props;
+const { Content } = await tool.render();
+const data = tool.data;
+const relatedPosts = data.relatedPosts.length
+  ? await getCollection("posts", ({ id }) => data.relatedPosts.includes(id))
+  : [];
+const jsonLd = { "@context": "https://schema.org", "@type": "SoftwareApplication", name: data.name, description: data.description, url: Astro.url.href, applicationCategory: data.category, operatingSystem: data.platforms.join(", "), offers: { "@type": "Offer", price: data.free ? "0" : undefined, priceCurrency: "USD", url: data.officialUrl }, aggregateRating: data.rating ? { "@type": "AggregateRating", ratingValue: data.rating, bestRating: 5, ratingCount: 1 } : undefined };
+---
+<MainGridLayout title={data.name} description={data.description} image={data.logo} headings={[]}>
+  <script is:inline slot="head" type="application/ld+json" set:html={JSON.stringify(jsonLd)}></script>
+  <article class="card-base p-6 md:p-9">
+    <div class="flex flex-wrap gap-5 items-start">
+      {data.logo ? <img src={data.logo} alt={`${data.name} logo`} width="80" height="80" class="w-20 h-20 rounded-2xl bg-white object-contain p-3" /> : <div class="w-20 h-20 rounded-2xl bg-[var(--primary)]/10 flex items-center justify-center text-3xl font-bold text-[var(--primary)]">{data.name.slice(0, 1)}</div>}
+      <div class="flex-1 min-w-[15rem]"><p class="text-sm text-[var(--primary)] font-bold mb-2">{data.category}</p><h1 class="text-3xl font-bold mb-2">{data.name}</h1><p class="text-75">{data.description}</p></div>
+    </div>
+    <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 my-7"><div><p class="text-xs text-50">价格</p><p class="font-bold mt-1">{data.free ? "免费可用" : "付费"}</p><p class="text-sm text-75">{data.pricing}</p></div><div><p class="text-xs text-50">支持平台</p><p class="font-bold mt-1">{data.platforms.join("、") || "以官网为准"}</p></div><div><p class="text-xs text-50">当前版本</p><p class="font-bold mt-1">{data.version || "持续更新"}</p></div><div><p class="text-xs text-50">最后测试</p><p class="font-bold mt-1">{data.lastTested ? formatDateToYYYYMMDD(data.lastTested) : "待更新"}</p></div></div>
+    <div class="flex flex-wrap gap-3 mb-8"><a class="btn-regular rounded-lg px-4 h-11 font-bold" href={data.officialUrl} target="_blank" rel="nofollow noopener">访问官网 ↗</a>{data.downloadUrl && <a class="btn-regular rounded-lg px-4 h-11 font-bold" href={data.downloadUrl} target="_blank" rel="nofollow noopener">官方下载 ↗</a>}</div>
+    {data.limitations && <div class="rounded-lg bg-[var(--primary)]/10 p-4 mb-8 text-sm"><strong>使用提示：</strong>{data.limitations}</div>}
+    <Markdown class="markdown-content"><Content /></Markdown>
+    {relatedPosts.length > 0 && <section class="mt-8 pt-6 border-t border-dashed border-black/10 dark:border-white/15"><h2 class="text-xl font-bold mb-4">相关文章</h2><div class="grid gap-3">{relatedPosts.map((post) => <a class="btn-card rounded-lg px-4 py-3" href={`/posts/${post.slug}/`}><strong>{post.data.title}</strong><span class="block text-sm text-75 mt-1">{post.data.description}</span></a>)}</div></section>}
+  </article>
+</MainGridLayout>
